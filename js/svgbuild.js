@@ -1,72 +1,26 @@
-(function(){
+const SVG = (function() {
 "use strict";
-
-//
-// settings
-//
-
-/*
-const settings = {
-	startTurn: -0.25,
-	winding: +1,
-};
-*/
 
 const namespace = "http://www.w3.org/2000/svg";
 const xlinkNS = "http://www.w3.org/1999/xlink";
 
-const targetId = "svgmain";
+let aspect;
 
-const svgContainer = document.getElementById(targetId);
-const svgRect = svgContainer.getBoundingClientRect();
+let scaleX;
+let scaleY;
+let radiusX;
+let radiusY;
 
-const goldenRatio = 5. ** .5 * .5 + .5;
-
-const width = Math.min(svgRect.height * goldenRatio, svgRect.width);
-const height = svgRect.height;
-
-// const width = 1456;
-// const height = 900;
-// const width = 0.95 * Math.min(window.innerHeight * goldenRatio, window.innerWidth);
-// const height = 0.95 * window.innerHeight;
-
-const aspect = width / height;
-
-const scaleX = 1000 * aspect;
-const scaleY = 1000;
-const radiusX = scaleX / 2;
-const radiusY = scaleY / 2;
-
-// const viewBox = [-width / 2, -height / 2, width, height].join(" ");
-const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
+let svgRoot;
 
 const strokeWidth = 0.75;
-
-//
-
-/*
-const numDays = 365;
-const numWeeks = numDays / 7;
-const firstWeekLength = ...
-const lastWeekLength = ...
-const numFullWeeks = ...
-*/
 
 //
 // data
 //
 
-const dasharray = "5,3";
-
-//const svgRoot = createSVGElem("svg", { id: "yearRound", width, height, viewBox });
-const svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
-
-document.getElementById(targetId).appendChild(svgRoot);
-
 function createSVGElem(tag, attributes)
 {
-	// const namespace = "http://www.w3.org/2000/svg";
-
 	const element = document.createElementNS(namespace, tag);
 
 	for (const key in attributes)
@@ -324,10 +278,9 @@ function shitfuck()
 	const d = createLoopData(310, 200);
 	// const d = createCurveData(-1/8, 1/8, 200, 2);
 
-	const path = createSVGElem("path", { d, stroke: "black", "stroke-width": strokeWidth, fill: "transparent" });
+	const path = createSVGElem("path", { d, stroke: "black", "stroke-width": 3, fill: "transparent" });
 
 	addElement(path);
-
 
 	var date = new Date();
 	var weekday = new Array(7);
@@ -343,12 +296,30 @@ function shitfuck()
 	console.log("it's " + n + " hopefully")
 }
 
-makeRects(10);
+function init(width, height)
+{
+	aspect = width / height;
 
-Ellipse.computeLUT(radiusX, radiusY);
+	scaleX = 1000 * aspect;
+	scaleY = 1000;
+	radiusX = scaleX / 2;
+	radiusY = scaleY / 2;
 
-createWeekSectors();
-createDaySectors();
-shitfuck();
+	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
+	svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
+
+	Ellipse.computeLUT(radiusX, radiusY);
+
+	return svgRoot;
+}
+
+return {
+	init,
+	createSVGElem,
+	makeRects,
+	createWeekSectors,
+	createDaySectors,
+	shitfuck,
+};
 
 })();

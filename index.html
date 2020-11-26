@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-	<meta charset="utf-8" />
-	<title>SVG test</title>
+	<meta charset="utf-8">
+	<title>Year visualization</title>
 
 <style>
 body {
@@ -25,55 +25,9 @@ body {
 	width: 100%;
 	height: 100%;
 }
-
-#svgmain {
-	padding: 10px;
-	/* border: 3px dotted blue; */
-	width: 100%;
-	height: 100%;
-}
-
-svg {
-	/* background: #eee; */
-	/* border: solid 1px pink; */
-}
-
-div#conic {
-	width: 100%;
-	height: 100%;
-	background: conic-gradient(from 0deg at 50% 70%, darkorange, hotpink, mediumaquamarine);
-}
-
-#yearRound text {
-	font-family: 'Open Sans', DINPro, sans-serif;
-	/* text-anchor: middle; */
-	/* dominant-baseline: middle; // alignment-baseline: middle; */
-	/* line-height: 0.5; */
-}
-
-#yearRound textPath {
-	text-anchor: middle;
-	dominant-baseline: middle;
-}
-
-/* #weeks {
-	fill: #bbb;
-	stroke: none;
-	stroke-width: 0.75;
-} */
-
-.tyyli1 {
-	font-family: sans-serif;
-	font-size: 9px;
-	fill: black;
-	/* font-weight: bold; */
-}
-
-tspan {
-	font-weight: bold;
-	/* fill: red; */
-}
 </style>
+
+<link rel="stylesheet" href="css/svg.css">
 
 </head>
 
@@ -90,7 +44,8 @@ tspan {
 </div>
 
 <script src="js/ellipse.js"></script>
-<script src="js/svgyear.js"></script>
+<script src="js/svgbuild.js"></script>
+<script src="js/main.js"></script>
 
 </body>
 </html>
