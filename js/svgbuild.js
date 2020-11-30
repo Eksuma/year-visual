@@ -245,8 +245,12 @@ function createDaySectors()
 	const d2 = createLoopData(310, 100);
 
 	const pathForClipping = createSVGElem("path", { d: d1 + ' ' + d2 });
+	// const pathForClipping1 = createSVGElem("path", { d: d1 });
+	// const pathForClipping2 = createSVGElem("path", { d: d2 });
 
 	clipPath.appendChild(pathForClipping);
+	// clipPath.appendChild(pathForClipping1);
+	// clipPath.appendChild(pathForClipping2);
 
 	addElement(clipPath);
 
@@ -275,7 +279,7 @@ function createDaySectors()
 
 function shitfuck()
 {
-	const d = createLoopData(310, 200);
+	const d = createLoopData(330, 200);
 	// const d = createCurveData(-1/8, 1/8, 200, 2);
 
 	const path = createSVGElem("path", { d, stroke: "black", "stroke-width": 3, fill: "transparent" });
