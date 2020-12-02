@@ -12,6 +12,7 @@ let radiusX;
 let radiusY;
 
 let svgRoot;
+let svgDefs;
 
 const startTurn = -1/4;
 const isClockwise = true;
@@ -46,6 +47,25 @@ function round(num)
 	return num.toFixed(3);
 }
 
+function createStyling()
+{
+	const style = createSVGElem("style", {});
+
+	var css = `
+		textPath {
+			startOffset: "50%";
+			method: "stretch";
+			spacing: "auto";
+		}
+	`;
+
+	style.type = "text/css";
+	style.title = "SVG default styling";
+	style.appendChild(document.createTextNode(css));
+
+	addElement(style);
+};
+
 function makeRects(amount)
 {
 	var color = new Color(0,0,0,1);
@@ -76,7 +96,7 @@ function createCurveData(turnStart, turnEnd, offset, subdivisions)
 	for (const point of curveGen)
 		data += round(point.x) + "," + round(point.y) + " ";
 
-	return data;
+	return data.trim();
 }
 
 function createLoopData(offset, numSides)
@@ -91,10 +111,10 @@ function createSectorPath(turn1, turn2, offset1, offset2, subdivisions)
 	const d1 = createCurveData(turn1, turn2, offset1, subdivisions);
 	const d2 = createCurveData(turn2, turn1, offset2, subdivisions);
 
-	return createSVGElem("path", { d: 'M' + d1 + d2 + 'z' });
+	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z' });
 }
 
-function createPathedText(innerHTML, pathId, attributes)
+function createPathedText(innerHTML, pathId, attributes, flipped = false)
 {
 	const text = createSVGElem("text", {
 		...attributes,
@@ -102,8 +122,9 @@ function createPathedText(innerHTML, pathId, attributes)
 
 	const textPath = createSVGElem("textPath", {
 		startOffset: "50%",
-		method: "stretch",
-		spacing: "auto",
+		//method: "stretch",
+		//spacing: "auto",
+		side: flipped ? "right" : "left",
 	});
 
 	textPath.setAttributeNS(xlinkNS, "href", pathId);
@@ -117,6 +138,25 @@ function createPathedText(innerHTML, pathId, attributes)
 	return text;
 }
 
+function createCurvedTextPath(turn1, turn2, offset, subdivisions, attributes)
+{
+	const turnMid = (turn1 + turn2) / 2;
+	const isUpsideDown = Ellipse.offsetPoint(turnMid, offset).y > 0;
+	const flipped = !(isUpsideDown ^ isClockwise);
+
+	const d = 'M' + createCurveData(
+		turn1,
+		turn2,
+		offset + (isUpsideDown ? -1 : 1),
+		subdivisions,
+	);
+
+	const path = createSVGElem("path", { d, ...attributes });
+
+	svgDefs.appendChild(path);
+}
+
+/*
 function createWeekSectors(firstWeekDay)
 {
 	const group = createSVGElem("g", {
@@ -183,6 +223,72 @@ function createWeekSectors(firstWeekDay)
 	}
 
 	addElement(defs);
+	addElement(group);
+}
+*/
+
+function createWeekSectors(firstWeekDay)
+{
+	const group = createSVGElem("g", {
+		id: "weeks",
+		fill: "#bbb",
+		stroke: "none", //"black",
+		// stroke: "black",
+		"stroke-width": strokeWidth,
+	});
+
+	const distUpper = 0;
+	const distLower = 20;
+	const distMiddle = (distUpper + distLower) * 0.5;
+
+	const numDays = 365;
+	const numWeeks = numDays / 7;
+	const daysLeftOver = numDays % numWeeks;
+
+	const gapSize = 2 / Ellipse.getCircumference();
+	const weekSubDivs = 3;
+
+	for (var i = 0; i < numWeeks-1; i++)
+	{
+		const turnMin = ((i + 0) / numWeeks) + gapSize;
+		const turnMax = ((i + 1) / numWeeks) - gapSize;
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubDivs);
+
+		group.appendChild(sector);
+
+		//
+		// labels
+		//
+
+		const turnMid = (turnMin + turnMax) / 2;
+		const isUpsideDown = Ellipse.offsetPoint(turnMid, distMiddle).y > 0;
+		const flipped = !(isUpsideDown ^ isClockwise);
+
+		const d = 'M' + createCurveData(
+			turnMin,
+			turnMax,
+			distMiddle + (isUpsideDown ? -1 : 1),
+			weekSubDivs
+		);
+
+		const pathId = `week${i}`;
+		const innerHTML = `WEEK <tspan dy="-1">${i + 1}</tspan>`; // TODO: Miksi täytyy olla hack
+
+		const pathForText = createSVGElem("path", { d, id: pathId });
+		const text = createPathedText(innerHTML, '#' + pathId, { class: "tyyli1" }, flipped);
+
+		svgDefs.appendChild(pathForText);
+		group.appendChild(text);
+	}
+
+	if (daysLeftOver > 0)
+	{
+		const turnMin = ((i + 0) / numWeeks) + gapSize;
+		const turnMax = ((i + 1) / numWeeks) - gapSize;
+		// ...
+	}
+
 	addElement(group);
 }
 
@@ -314,7 +420,13 @@ function init(width, height)
 	radiusY = scaleY / 2;
 
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
+
 	svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
+	svgDefs = createSVGElem("defs", {});
+
+	svgRoot.appendChild(svgDefs);
+
+	// createStyling();
 
 	Ellipse.computeLUT(radiusX, radiusY, startTurn, isClockwise);
 
