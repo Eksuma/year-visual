@@ -10,13 +10,15 @@ let radiusX = 0;
 let radiusY = 0;
 let circumference = 0;
 
-let winding = +1;
-let startTurn = -1/4;
+let startTurn = 0;
+let winding = 1;
 
-function computeLUT(rx, ry)
+function computeLUT(rx, ry, startT, clockwise)
 {
 	radiusX = rx;
 	radiusY = ry;
+	startTurn = startT;
+	winding = clockwise ? 1 : -1;
 
 	const numIntegrals = 100000;
 
@@ -53,6 +55,7 @@ function computeLUT(rx, ry)
 	}
 }
 
+/*
 function turnToRadians(turn)
 {
 	// const winding = +1;
@@ -60,11 +63,12 @@ function turnToRadians(turn)
 
 	return (startTurn + turn * winding) * 2 * Math.PI;
 }
+*/
 
 function pointByAngle(turn, rx, ry)
 {
-	const radians = turnToRadians(turn);
-	// const radians = turn * 2 * Math.PI;
+	// const radians = turnToRadians(turn);
+	const radians = turn * 2 * Math.PI;
 
 	return {
 		x: Math.cos(radians) * rx,
@@ -81,8 +85,7 @@ function computeDp(turn, rx, ry)
 
 function pointByRatio(circRatio)
 {
-	//circRatio = circRatio * winding + startTurn;
-	//circRatio = MyMath.mod(circRatio * winding + startTurn, 1);
+	circRatio = MyMath.mod(circRatio * winding + startTurn, 1);
 
 	const indexReal = MyMath.mod(circRatio * lutPoints, lutPoints);
 	const indexFloor = Math.floor(indexReal);
@@ -94,8 +97,6 @@ function pointByRatio(circRatio)
 	const y2 = lutPosY[indexCeil];
 
 	const alpha = indexReal - indexFloor;
-
-// debugger;
 
 	return {
 		x: MyMath.lerp(x1, x2, alpha),

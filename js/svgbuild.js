@@ -13,6 +13,8 @@ let radiusY;
 
 let svgRoot;
 
+const startTurn = -1/4;
+const isClockwise = true;
 const strokeWidth = 0.75;
 
 //
@@ -152,12 +154,14 @@ function createWeekSectors(firstWeekDay)
 		//
 
 		const turnMid = (turnMin + turnMax) / 2;
-		const flipped = Ellipse.offsetPoint(turnMid, distMiddle).y > 0;
+		const isDownward = Ellipse.offsetPoint(turnMid, distMiddle).y > 0;
+		const flipped = !(isDownward ^ isClockwise);
 
 		const d = 'M' + createCurveData(
 			flipped ? turnMax : turnMin,
 			flipped ? turnMin : turnMax,
-			distMiddle + (flipped ? -1 : 1),
+			// distMiddle + (flipped ? -1 : 1),
+			distMiddle + ((isClockwise && isDownward) ? -1 : (!isClockwise && isDownward) ? 0 : 1), // why -_-
 			weekSubDivs
 		);
 
@@ -312,7 +316,7 @@ function init(width, height)
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
 	svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
 
-	Ellipse.computeLUT(radiusX, radiusY);
+	Ellipse.computeLUT(radiusX, radiusY, startTurn, isClockwise);
 
 	return svgRoot;
 }
