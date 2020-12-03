@@ -114,6 +114,7 @@ function createSectorPath(turn1, turn2, offset1, offset2, subdivisions)
 	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z' });
 }
 
+/*
 function createPathedText(innerHTML, pathId, attributes, flipped = false)
 {
 	const text = createSVGElem("text", {
@@ -137,23 +138,44 @@ function createPathedText(innerHTML, pathId, attributes, flipped = false)
 
 	return text;
 }
+*/
 
-function createCurvedTextPath(turn1, turn2, offset, subdivisions, attributes)
+function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivisions, attributes)
 {
-	const turnMid = (turn1 + turn2) / 2;
+	const turnMid = (turnStart + turnEnd) / 2;
 	const isUpsideDown = Ellipse.offsetPoint(turnMid, offset).y > 0;
 	const flipped = !(isUpsideDown ^ isClockwise);
 
 	const d = 'M' + createCurveData(
-		turn1,
-		turn2,
+		turnStart,
+		turnEnd,
 		offset + (isUpsideDown ? -1 : 1),
 		subdivisions,
 	);
 
-	const path = createSVGElem("path", { d, ...attributes });
+	const pathForText = createSVGElem("path", { d, id: pathId });
 
-	svgDefs.appendChild(path);
+	svgDefs.appendChild(pathForText);
+
+	//
+
+	const text = createSVGElem("text", attributes);
+
+	const textPath = createSVGElem("textPath", {
+		startOffset: "50%",
+		// "text-anchor": "middle",
+		// "dominant-baseline": "middle",
+		// method: "stretch",
+		// spacing: "auto",
+		side: flipped ? "right" : "left",
+	});
+
+	textPath.setAttributeNS(xlinkNS, "href", '#' + pathId);
+
+	textPath.innerHTML = innerHTML;
+	text.appendChild(textPath);
+
+	return text;
 }
 
 /*
@@ -178,14 +200,14 @@ function createWeekSectors(firstWeekDay)
 	const daysLeftOver = numDays % numWeeks;
 
 	const gapSize = 2 / Ellipse.getCircumference();
-	const weekSubDivs = 3;
+	const weekSubdivs = 3;
 
 	for (var i = 0; i < numWeeks-1; i++)
 	{
 		const turnMin = ((i + 0) / numWeeks) + gapSize;
 		const turnMax = ((i + 1) / numWeeks) - gapSize;
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubDivs);
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
 
 		group.appendChild(sector);
 
@@ -202,7 +224,7 @@ function createWeekSectors(firstWeekDay)
 			flipped ? turnMin : turnMax,
 			// distMiddle + (flipped ? -1 : 1),
 			distMiddle + ((isClockwise && isDownward) ? -1 : (!isClockwise && isDownward) ? 0 : 1), // why -_-
-			weekSubDivs
+			weekSubdivs
 		);
 
 		const pathId = `week${i}`;
@@ -227,7 +249,7 @@ function createWeekSectors(firstWeekDay)
 }
 */
 
-function createWeekSectors(firstWeekDay)
+function createWeekSectors(firstWeekDay = 3)
 {
 	const group = createSVGElem("g", {
 		id: "weeks",
@@ -237,23 +259,23 @@ function createWeekSectors(firstWeekDay)
 		"stroke-width": strokeWidth,
 	});
 
+	const gapSize = 4;
 	const distUpper = 0;
-	const distLower = 20;
+	const distLower = 24 - gapSize;
 	const distMiddle = (distUpper + distLower) * 0.5;
+	const radialGap = (gapSize / 2) / Ellipse.getCircumference();
+	const weekSubdivs = 3;
 
 	const numDays = 365;
 	const numWeeks = numDays / 7;
-	const daysLeftOver = numDays % numWeeks;
-
-	const gapSize = 2 / Ellipse.getCircumference();
-	const weekSubDivs = 3;
+	const daysLeftOver = (numWeeks - Math.floor(numWeeks)) * 7// numDays - numWeeks * 7;
 
 	for (var i = 0; i < numWeeks-1; i++)
 	{
-		const turnMin = ((i + 0) / numWeeks) + gapSize;
-		const turnMax = ((i + 1) / numWeeks) - gapSize;
+		const turnMin = ((i + 0) / numWeeks) + radialGap;
+		const turnMax = ((i + 1) / numWeeks) - radialGap;
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubDivs);
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
 
 		group.appendChild(sector);
 
@@ -261,32 +283,22 @@ function createWeekSectors(firstWeekDay)
 		// labels
 		//
 
-		const turnMid = (turnMin + turnMax) / 2;
-		const isUpsideDown = Ellipse.offsetPoint(turnMid, distMiddle).y > 0;
-		const flipped = !(isUpsideDown ^ isClockwise);
-
-		const d = 'M' + createCurveData(
-			turnMin,
-			turnMax,
-			distMiddle + (isUpsideDown ? -1 : 1),
-			weekSubDivs
-		);
-
 		const pathId = `week${i}`;
 		const innerHTML = `WEEK <tspan dy="-1">${i + 1}</tspan>`; // TODO: Miksi täytyy olla hack
 
-		const pathForText = createSVGElem("path", { d, id: pathId });
-		const text = createPathedText(innerHTML, '#' + pathId, { class: "tyyli1" }, flipped);
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" });
 
-		svgDefs.appendChild(pathForText);
 		group.appendChild(text);
 	}
 
 	if (daysLeftOver > 0)
 	{
-		const turnMin = ((i + 0) / numWeeks) + gapSize;
-		const turnMax = ((i + 1) / numWeeks) - gapSize;
-		// ...
+		const turnMin = ((numDays - daysLeftOver) / numDays) + radialGap;
+		const turnMax = ((numDays -            0) / numDays) - radialGap;
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
+
+		group.appendChild(sector);
 	}
 
 	addElement(group);

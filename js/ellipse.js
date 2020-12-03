@@ -91,6 +91,10 @@ function pointByRatio(circRatio)
 	const indexFloor = Math.floor(indexReal);
 	const indexCeil = MyMath.mod(indexFloor + 1, lutPoints);
 
+	// const indexRealX = circRatio * lutPoints;
+	// const indexFloorX = Math.floor(indexReal);
+	// const indexCeilX = (indexFloor + 1) % lutPoints;
+
 	const x1 = lutPosX[indexFloor];
 	const y1 = lutPosY[indexFloor];
 	const x2 = lutPosX[indexCeil];
