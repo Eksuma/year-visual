@@ -14,9 +14,36 @@ let radiusY;
 let svgRoot;
 let svgDefs;
 
-const startTurn = -1/4;
+const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+
+const currYear = new Date().getFullYear();
+const leapDay = isLeapYear(currYear) ? 1 : 0;
+const monthsInYear = 12;
+const daysInMonth = [31, 28 + leapDay, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const daysInYear = 365 + leapDay;
+
+const testDate = new Date(currYear, 11, 31, 23, 59, 59, 0);
+
+const yearStart = new Date(currYear, 0);
+const yearEnd = new Date(currYear + 1, 0);
+const yearRatio = (Date.now() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+
+const startTurn = -1/4 //- yearRatio;
 const isClockwise = true;
 const strokeWidth = 0.75;
+
+console.log("date: " + new Date())
+console.log("year: " + currYear)
+console.log("percent: " + (yearRatio * 100).toFixed(2))
+console.log("test: " + testDate)
+console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
+
+const monthColors = [
+	"#fdfdfd", "#b3e6ff", "#66ccff",
+	"#99ff99", "#66ff33", "#99ff33",
+	"#ffbf00", "#e1942b", "#906611", // 8: #c38e22
+	"#ff8000", "#4d6680", "#c83333", // 10: #ff9933   11: #a18aa8   12: #ff3333
+];
 
 //
 // data
@@ -354,6 +381,14 @@ function createWeekSectors(firstWeekOffset = -3)
 		group.appendChild(text);
 	}
 
+	// tmp
+	const upper = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distUpper-5)
+	const lower = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distLower)
+	const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+	var polyline = createSVGElem("polyline", { points: data, stroke: "red", "stroke-width": strokeWidth*2 });
+
+	group.appendChild(polyline);
+
 	addElement(group);
 }
 
@@ -454,30 +489,15 @@ function createDaySectors()
 	const distUpper = 24;
 	const distLower = 35;
 
-	const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
-
-	const currYear = 2020;
-	const leapDay = isLeapYear(currYear) ? 1 : 0;
-	const monthsInYear = 12;
-	const daysInMonths = [31, 28 + leapDay, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-	const daysInYear = 365 + leapDay;
-
-	const monthColors = [
-		"#fdfdfd", "#b3e6ff", "#66ccff",
-		"#99ff99", "#66ff33", "#99ff33",
-		"#ffbf00", "#e1942b", "#906611", // 8: #c38e22
-		"#ff8000", "#4d6680", "#c83333", // 10: #ff9933   11: #a18aa8   12: #ff3333
-	];
-
 	var dayCount = 0;
 
 	for (var i = 0; i < monthsInYear; i++)
 	{
 		const turnMin = dayCount / daysInYear;
-		dayCount += daysInMonths[i];
+		dayCount += daysInMonth[i];
 		const turnMax = dayCount / daysInYear;
 
-		const monthSubdivs = daysInMonths[i] - 1;
+		const monthSubdivs = daysInMonth[i] - 1;
 
 		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, monthSubdivs, { fill: monthColors[i] });
 
