@@ -106,12 +106,12 @@ function createLoopData(offset, numSides)
 	return 'M' + data + 'z';
 }
 
-function createSectorPath(turn1, turn2, offset1, offset2, subdivisions)
+function createSectorPath(turn1, turn2, offset1, offset2, subdivisions, attributes)
 {
 	const d1 = createCurveData(turn1, turn2, offset1, subdivisions);
 	const d2 = createCurveData(turn2, turn1, offset2, subdivisions);
 
-	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z' });
+	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z', ...attributes });
 }
 
 /*
@@ -249,7 +249,8 @@ function createWeekSectors(firstWeekDay)
 }
 */
 
-function createWeekSectors(firstWeekDay = 3)
+/*
+function createWeekSectors(firstWeekOffset = -3)
 {
 	const group = createSVGElem("g", {
 		id: "weeks",
@@ -303,7 +304,60 @@ function createWeekSectors(firstWeekDay = 3)
 
 	addElement(group);
 }
+*/
 
+function createWeekSectors(firstWeekOffset = -3)
+{
+	const group = createSVGElem("g", {
+		id: "weeks",
+		fill: "#bbb",
+		stroke: "none", //"black",
+		// stroke: "black",
+		"stroke-width": strokeWidth,
+	});
+
+	const gapSize = 4;
+	const distUpper = 0;
+	const distLower = 24 - gapSize;
+	const distMiddle = (distUpper + distLower) * 0.5;
+	const radialGap = (gapSize / 2) / Ellipse.getCircumference();
+	const weekSubdivs = 3;
+
+	const daysInYear = 365 + 1;
+	const daysInWeek = 7;
+
+	for (var i = firstWeekOffset, weekNum = 0; i < daysInYear; i += daysInWeek, weekNum++)
+	{
+		const dayNum1 = Math.max(i, 0);
+		const dayNum2 = Math.min(i + daysInWeek, daysInYear);
+
+		const turnMin = (dayNum1 / daysInYear) + radialGap;
+		const turnMax = (dayNum2 / daysInYear) - radialGap;
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs, {});
+
+		group.appendChild(sector);
+
+		//
+		// labels
+		//
+
+		// if there's no room for the text, just skip it
+		if (dayNum2 - dayNum1 < 4)
+			continue;
+
+		const pathId = `week${weekNum}`;
+		const innerHTML = `WEEK <tspan dy="-1">${weekNum + 1}</tspan>`; // TODO: Miksi täytyy olla hack
+
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" });
+
+		group.appendChild(text);
+	}
+
+	addElement(group);
+}
+
+/*
 function createDaySectors()
 {
 	var group = createSVGElem("g", {
@@ -352,17 +406,6 @@ function createDaySectors()
 
 	var clipPath = createSVGElem("clipPath", { id: "clip", "clip-rule": "evenodd" });
 
-/*
-	var op = outerPolygon.cloneNode();
-	var ip = innerPolygon.cloneNode();
-
-	op["clip-rule"] = "evenodd";
-	ip["clip-rule"] = "evenodd";
-
-	clipPath.appendChild(op);
-	clipPath.appendChild(ip);
-*/
-
 	const d1 = createLoopData(distUpper, 100);
 	const d2 = createLoopData(310, 100);
 
@@ -398,10 +441,90 @@ function createDaySectors()
 
 	addElement(group);
 }
+*/
+
+function createDaySectors()
+{
+	var group = createSVGElem("g", {
+		// fill: "none",
+		// stroke: "black",
+		// "stroke-width": strokeWidth,
+	});
+
+	const distUpper = 24;
+	const distLower = 35;
+
+	const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+
+	const currYear = 2020;
+	const leapDay = isLeapYear(currYear) ? 1 : 0;
+	const monthsInYear = 12;
+	const daysInMonths = [31, 28 + leapDay, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	const daysInYear = 365 + leapDay;
+
+	const monthColors = [
+		"#fdfdfd", "#b3e6ff", "#66ccff",
+		"#99ff99", "#66ff33", "#99ff33",
+		"#ffbf00", "#e1942b", "#906611", // 8: #c38e22
+		"#ff8000", "#4d6680", "#c83333", // 10: #ff9933   11: #a18aa8   12: #ff3333
+	];
+
+	var dayCount = 0;
+
+	for (var i = 0; i < monthsInYear; i++)
+	{
+		const turnMin = dayCount / daysInYear;
+		dayCount += daysInMonths[i];
+		const turnMax = dayCount / daysInYear;
+
+		const monthSubdivs = daysInMonths[i] - 1;
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, monthSubdivs, { fill: monthColors[i] });
+
+		group.appendChild(sector);
+	}
+
+	// outlines
+
+	var outlineg = createSVGElem("g", {
+		fill: "none",
+		stroke: "black",
+		"stroke-width": strokeWidth,
+	});
+
+	const dhi = createLoopData(distUpper, daysInYear);
+	const dlo = createLoopData(distLower, daysInYear);
+
+	const pathHi = createSVGElem("path", { d: dhi });
+	const pathLo = createSVGElem("path", { d: dlo });
+
+	outlineg.appendChild(pathHi);
+	outlineg.appendChild(pathLo);
+
+	const finalAngle = (daysInYear - 1) / daysInYear;
+
+	const pointsHi = Ellipse.offsetCurveGen(0, finalAngle, distUpper, daysInYear);
+	const pointsLo = Ellipse.offsetCurveGen(0, finalAngle, distLower, daysInYear);
+
+	for (var i = 0; i < daysInYear; i++)
+	{
+		const upper = pointsHi.next().value;
+		const lower = pointsLo.next().value;
+
+		const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+
+		var polyline = createSVGElem("polyline", { points: data });
+
+		outlineg.appendChild(polyline);
+	}
+
+	addElement(group);
+	addElement(outlineg);
+}
 
 function shitfuck()
 {
-	const d = createLoopData(330, 200);
+	const d = createLoopData(630, 200);
 	// const d = createCurveData(-1/8, 1/8, 200, 2);
 
 	const path = createSVGElem("path", { d, stroke: "black", "stroke-width": 3, fill: "transparent" });
