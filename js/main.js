@@ -17,9 +17,8 @@ svgContainer.appendChild(svgRoot);
 SVG.makeRects(10);
 SVG.createWeekSectors();
 SVG.createDaySectors();
+SVG.createMonthSectors();
 SVG.shitfuck();
-
-console.log("color: " + lerpColors('#00FF00', '#FF00FF', 1.00))
 
 function testSomething()
 {

@@ -1,6 +1,10 @@
 const SVG = (function() {
 "use strict";
 
+//
+// Variables
+//
+
 const namespace = "http://www.w3.org/2000/svg";
 const xlinkNS = "http://www.w3.org/1999/xlink";
 
@@ -16,8 +20,10 @@ let svgDefs;
 
 const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 
-const currYear = new Date().getFullYear();
+const currDate = new Date();
+const currYear = currDate.getFullYear(); // new Date().getFullYear();
 const leapDay = isLeapYear(currYear) ? 1 : 0;
+const daysInWeek = 7;
 const monthsInYear = 12;
 const daysInMonth = [31, 28 + leapDay, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const daysInYear = 365 + leapDay;
@@ -26,17 +32,32 @@ const testDate = new Date(currYear, 11, 31, 23, 59, 59, 0);
 
 const yearStart = new Date(currYear, 0);
 const yearEnd = new Date(currYear + 1, 0);
-const yearRatio = (Date.now() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+const yearRatio = (currDate.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+// const yearRatio = (testDate - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+const firstDayOfYear = yearStart.getDay();
 
-const startTurn = -1/4 //- yearRatio;
+//
+// "Settings"
+//
+
+const weekStartingDay = 1; // 0 = sun, 1 = mon, 2 = tue, 3 = wed, 4 = thu, 5 = fri, 6 = sat
+const firstWeekOffset = -MyMath.mod(firstDayOfYear - weekStartingDay, daysInWeek);
+
+const currDayOnTop = false;
+const startTurn = -1/4 - (currDayOnTop ? yearRatio : 0);
 const isClockwise = true;
 const strokeWidth = 0.75;
 
-console.log("date: " + new Date())
-console.log("year: " + currYear)
 console.log("percent: " + (yearRatio * 100).toFixed(2))
-console.log("test: " + testDate)
-console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
+// console.log("test: " + testDate)
+// console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
+
+const monthNames = [
+	"tammi", "helmi", "maalis",
+	"huhti", "touko", "kesä",
+	"heinä", "elo", "syys",
+	"loka", "marras", "joulu"
+];
 
 const monthColors = [
 	"#fdfdfd", "#b3e6ff", "#66ccff",
@@ -46,7 +67,7 @@ const monthColors = [
 ];
 
 //
-// data
+// Functions
 //
 
 function createSVGElem(tag, attributes)
@@ -141,32 +162,6 @@ function createSectorPath(turn1, turn2, offset1, offset2, subdivisions, attribut
 	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z', ...attributes });
 }
 
-/*
-function createPathedText(innerHTML, pathId, attributes, flipped = false)
-{
-	const text = createSVGElem("text", {
-		...attributes,
-	});
-
-	const textPath = createSVGElem("textPath", {
-		startOffset: "50%",
-		//method: "stretch",
-		//spacing: "auto",
-		side: flipped ? "right" : "left",
-	});
-
-	textPath.setAttributeNS(xlinkNS, "href", pathId);
-
-	// const textNode = document.createTextNode(str);
-	// textPath.appendChild(textNode);
-
-	textPath.innerHTML = innerHTML;
-	text.appendChild(textPath);
-
-	return text;
-}
-*/
-
 function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivisions, attributes)
 {
 	const turnMid = (turnStart + turnEnd) / 2;
@@ -205,153 +200,20 @@ function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivi
 	return text;
 }
 
-/*
-function createWeekSectors(firstWeekDay)
+function createWeekSectors()
 {
 	const group = createSVGElem("g", {
 		id: "weeks",
 		fill: "#bbb",
-		stroke: "none", //"black",
-		// stroke: "black",
-		"stroke-width": strokeWidth,
-	});
-
-	const defs = createSVGElem("defs", {});
-
-	const distUpper = 0;
-	const distLower = 20;
-	const distMiddle = (distUpper + distLower) * 0.5;
-
-	const numDays = 365;
-	const numWeeks = numDays / 7;
-	const daysLeftOver = numDays % numWeeks;
-
-	const gapSize = 2 / Ellipse.getCircumference();
-	const weekSubdivs = 3;
-
-	for (var i = 0; i < numWeeks-1; i++)
-	{
-		const turnMin = ((i + 0) / numWeeks) + gapSize;
-		const turnMax = ((i + 1) / numWeeks) - gapSize;
-
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
-
-		group.appendChild(sector);
-
-		//
-		// labels
-		//
-
-		const turnMid = (turnMin + turnMax) / 2;
-		const isDownward = Ellipse.offsetPoint(turnMid, distMiddle).y > 0;
-		const flipped = !(isDownward ^ isClockwise);
-
-		const d = 'M' + createCurveData(
-			flipped ? turnMax : turnMin,
-			flipped ? turnMin : turnMax,
-			// distMiddle + (flipped ? -1 : 1),
-			distMiddle + ((isClockwise && isDownward) ? -1 : (!isClockwise && isDownward) ? 0 : 1), // why -_-
-			weekSubdivs
-		);
-
-		const pathId = `week${i}`;
-		const innerHTML = `WEEK <tspan dy="-1">${i + 1}</tspan>`; // TODO: Miksi täytyy olla hack
-
-		const pathForText = createSVGElem("path", { d, id: pathId });
-		const text = createPathedText(innerHTML, '#' + pathId, { class: "tyyli1" });
-
-		defs.appendChild(pathForText);
-		group.appendChild(text);
-	}
-
-	if (daysLeftOver > 0)
-	{
-		const turnMin = ((i + 0) / numWeeks) + gapSize;
-		const turnMax = ((i + 1) / numWeeks) - gapSize;
-		// ...
-	}
-
-	addElement(defs);
-	addElement(group);
-}
-*/
-
-/*
-function createWeekSectors(firstWeekOffset = -3)
-{
-	const group = createSVGElem("g", {
-		id: "weeks",
-		fill: "#bbb",
-		stroke: "none", //"black",
-		// stroke: "black",
-		"stroke-width": strokeWidth,
+		stroke: "none",
 	});
 
 	const gapSize = 4;
 	const distUpper = 0;
 	const distLower = 24 - gapSize;
-	const distMiddle = (distUpper + distLower) * 0.5;
+	const distMiddle = (distUpper + distLower) / 2;
 	const radialGap = (gapSize / 2) / Ellipse.getCircumference();
 	const weekSubdivs = 3;
-
-	const numDays = 365;
-	const numWeeks = numDays / 7;
-	const daysLeftOver = (numWeeks - Math.floor(numWeeks)) * 7// numDays - numWeeks * 7;
-
-	for (var i = 0; i < numWeeks-1; i++)
-	{
-		const turnMin = ((i + 0) / numWeeks) + radialGap;
-		const turnMax = ((i + 1) / numWeeks) - radialGap;
-
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
-
-		group.appendChild(sector);
-
-		//
-		// labels
-		//
-
-		const pathId = `week${i}`;
-		const innerHTML = `WEEK <tspan dy="-1">${i + 1}</tspan>`; // TODO: Miksi täytyy olla hack
-
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" });
-
-		group.appendChild(text);
-	}
-
-	if (daysLeftOver > 0)
-	{
-		const turnMin = ((numDays - daysLeftOver) / numDays) + radialGap;
-		const turnMax = ((numDays -            0) / numDays) - radialGap;
-
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs);
-
-		group.appendChild(sector);
-	}
-
-	addElement(group);
-}
-*/
-
-function createWeekSectors(firstWeekOffset = -3)
-{
-	const group = createSVGElem("g", {
-		id: "weeks",
-		fill: "#bbb",
-		stroke: "none", //"black",
-		// stroke: "black",
-		"stroke-width": strokeWidth,
-	});
-
-	const gapSize = 4;
-	const distUpper = 0;
-	const distLower = 24 - gapSize;
-	const distMiddle = (distUpper + distLower) * 0.5;
-	const radialGap = (gapSize / 2) / Ellipse.getCircumference();
-	const weekSubdivs = 3;
-
-	const daysInYear = 365 + 1;
-	const daysInWeek = 7;
 
 	for (var i = firstWeekOffset, weekNum = 0; i < daysInYear; i += daysInWeek, weekNum++)
 	{
@@ -370,7 +232,7 @@ function createWeekSectors(firstWeekOffset = -3)
 		//
 
 		// if there's no room for the text, just skip it
-		if (dayNum2 - dayNum1 < 4)
+		if (dayNum2 - dayNum1 < 5)
 			continue;
 
 		const pathId = `week${weekNum}`;
@@ -381,106 +243,21 @@ function createWeekSectors(firstWeekOffset = -3)
 		group.appendChild(text);
 	}
 
-	// tmp
+	// tmp year dial
 	const upper = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distUpper-5)
 	const lower = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distLower)
 	const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
-	var polyline = createSVGElem("polyline", { points: data, stroke: "red", "stroke-width": strokeWidth*2 });
+	var polyline = createSVGElem("polyline", { points: data, stroke: "red", "stroke-width": strokeWidth/2 });
 
 	group.appendChild(polyline);
 
 	addElement(group);
 }
 
-/*
 function createDaySectors()
 {
 	var group = createSVGElem("g", {
-		fill: "none", // "transparent"
-		stroke: "black",
-		"stroke-width": strokeWidth,
-	});
-
-	const numPoints = 365;
-
-	const distUpper = 24;
-	const distLower = 35;
-
-	var upperPoints = "";
-	var lowerPoints = "";
-
-	for (var i = 0; i < numPoints; i++)
-	{
-		const fraction = i / numPoints;
-
-		var upper = Ellipse.offsetPoint(fraction, distUpper);
-		var lower = Ellipse.offsetPoint(fraction, distLower);
-
-		var upperStr = round(upper.x) + "," + round(upper.y) + " ";
-		var lowerStr = round(lower.x) + "," + round(lower.y) + " ";
-
-		var polyline = createSVGElem("polyline", { points: upperStr + lowerStr });
-
-		group.appendChild(polyline);
-
-		//
-
-		upperPoints = upperPoints + upperStr;
-		lowerPoints = lowerStr + lowerPoints;
-	}
-
-	var outerPolygon = createSVGElem("polygon", { points: upperPoints });
-	var innerPolygon = createSVGElem("polygon", { points: lowerPoints });
-
-	group.appendChild(outerPolygon);
-	group.appendChild(innerPolygon);
-
-	//
-	//
-	//
-
-	var clipPath = createSVGElem("clipPath", { id: "clip", "clip-rule": "evenodd" });
-
-	const d1 = createLoopData(distUpper, 100);
-	const d2 = createLoopData(310, 100);
-
-	const pathForClipping = createSVGElem("path", { d: d1 + ' ' + d2 });
-	// const pathForClipping1 = createSVGElem("path", { d: d1 });
-	// const pathForClipping2 = createSVGElem("path", { d: d2 });
-
-	clipPath.appendChild(pathForClipping);
-	// clipPath.appendChild(pathForClipping1);
-	// clipPath.appendChild(pathForClipping2);
-
-	addElement(clipPath);
-
-	var forObj = createSVGElem("foreignObject", {
-		x: -scaleX / 2,
-		y: -scaleY / 2,
-		width: scaleX,
-		height: scaleY,
-		"clip-path": "url(#clip)",
-	});
-
-	var div = document.createElement('div');
-	div.xmlns = "http://www.w3.org/1999/xhtml";
-	div.id = "conic";
-
-	forObj.appendChild(div);
-
-	addElement(forObj);
-
-	//
-	//
-	//
-
-	addElement(group);
-}
-*/
-
-function createDaySectors()
-{
-	var group = createSVGElem("g", {
+		id: "days",
 		// fill: "none",
 		// stroke: "black",
 		// "stroke-width": strokeWidth,
@@ -542,6 +319,47 @@ function createDaySectors()
 	addElement(outlineg);
 }
 
+function createMonthSectors()
+{
+	const group = createSVGElem("g", {
+		id: "months",
+		fill: "#fff",
+		stroke: "none",
+	});
+
+	const distUpper = 35;
+	const distLower = 55;
+	const distMiddle = (distUpper + distLower) / 2;
+
+	const monthSubdivs = 10;
+
+	var dayCount = 0;
+
+	for (var i = 0; i < monthsInYear; i++)
+	{
+		const turnMin = dayCount / daysInYear;
+		dayCount += daysInMonth[i];
+		const turnMax = dayCount / daysInYear;
+
+		const monthSubdivs = daysInMonth[i] - 1;
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, monthSubdivs, {});
+
+		// labels
+
+		const pathId = `month${i}`;
+		const innerHTML = monthNames[i];
+
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { style: "font-size: 20; stroke: black;" });
+
+		group.appendChild(text);
+
+		group.appendChild(sector);
+	}
+
+	addElement(group);
+}
+
 function shitfuck()
 {
 	const d = createLoopData(630, 200);
@@ -550,19 +368,6 @@ function shitfuck()
 	const path = createSVGElem("path", { d, stroke: "black", "stroke-width": 3, fill: "transparent" });
 
 	addElement(path);
-
-	var date = new Date();
-	var weekday = new Array(7);
-	weekday[0] = "Sunday";
-	weekday[1] = "Monday";
-	weekday[2] = "Tuesday";
-	weekday[3] = "Wednesday";
-	weekday[4] = "Thursday";
-	weekday[5] = "Friday";
-	weekday[6] = "Saturday";
-
-	var n = weekday[date.getDay()];
-	console.log("it's " + n + " hopefully")
 }
 
 function init(width, height)
@@ -575,6 +380,7 @@ function init(width, height)
 	radiusY = scaleY / 2;
 
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
+	// const viewBox = [-scaleX / 8 - 100, -scaleY / 2, scaleX / 4, scaleY / 4].map(x => x.toFixed(2)).join(" ");
 
 	svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
 	svgDefs = createSVGElem("defs", {});
@@ -594,6 +400,7 @@ return {
 	makeRects,
 	createWeekSectors,
 	createDaySectors,
+	createMonthSectors,
 	shitfuck,
 };
 
