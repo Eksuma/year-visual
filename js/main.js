@@ -14,11 +14,7 @@ const svgRoot = SVG.init(width, height);
 
 svgContainer.appendChild(svgRoot);
 
-SVG.makeRects(10);
-SVG.createWeekSectors();
-SVG.createDaySectors();
-SVG.createMonthSectors();
-SVG.shitfuck();
+SVG.build();
 
 function testSomething()
 {

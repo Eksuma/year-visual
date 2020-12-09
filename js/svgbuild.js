@@ -21,7 +21,7 @@ let svgDefs;
 const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 
 const currDate = new Date();
-const currYear = currDate.getFullYear(); // new Date().getFullYear();
+const currYear = currDate.getFullYear();
 const leapDay = isLeapYear(currYear) ? 1 : 0;
 const daysInWeek = 7;
 const monthsInYear = 12;
@@ -52,11 +52,20 @@ console.log("percent: " + (yearRatio * 100).toFixed(2))
 // console.log("test: " + testDate)
 // console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
 
+/*
 const monthNames = [
 	"tammi", "helmi", "maalis",
 	"huhti", "touko", "kesä",
 	"heinä", "elo", "syys",
 	"loka", "marras", "joulu"
+];
+*/
+
+const monthNames = [
+	"january", "february", "march",
+	"april", "may", "june",
+	"july", "august", "september",
+	"october", "november", "december"
 ];
 
 const monthColors = [
@@ -330,7 +339,7 @@ function createMonthSectors()
 	const labels = createSVGElem("g", {
 		fill: "black",
 		stroke: "black",
-		"stroke-width": strokeWidth / 1,
+		"stroke-width": strokeWidth / 2,
 		style: "font-size: 20px;",
 	});
 
@@ -360,6 +369,50 @@ function createMonthSectors()
 		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { fill: monthColors[i] });
 
 		labels.appendChild(text);
+
+		group.appendChild(sector);
+	}
+
+	group.appendChild(labels);
+	addElement(group);
+}
+
+function createQuarterSectors()
+{
+	const group = createSVGElem("g", {
+		id: "quarters",
+		fill: "#ff0",
+		stroke: "none",
+	});
+
+	const labels = createSVGElem("g", {
+		fill: "black",
+		stroke: "black",
+		"stroke-width": strokeWidth / 2,
+		style: "font-size: 30px;",
+	});
+
+	const distUpper = 61;
+	const distLower = 120;
+	const distMiddle = (distUpper + distLower) / 2;
+
+	var monthIndex = 0;
+	var dayCounter = 0;
+
+	for (var i = 0; i < daysInYear; i++)
+	{
+		const turnMin = (i + 0) / daysInYear;
+		const turnMax = (i + 1) / daysInYear;
+
+		const alpha = dayCounter / daysInMonth[monthIndex];
+
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
+
+		if (++dayCounter >= daysInMonth[monthIndex])
+		{
+			monthIndex++;
+			dayCounter = 0;
+		}
 
 		group.appendChild(sector);
 	}
@@ -402,14 +455,20 @@ function init(width, height)
 	return svgRoot;
 }
 
+function build()
+{
+	makeRects(10);
+	createWeekSectors();
+	createDaySectors();
+	createMonthSectors();
+	createQuarterSectors();
+	shitfuck();
+}
+
 return {
 	init,
 	createSVGElem,
-	makeRects,
-	createWeekSectors,
-	createDaySectors,
-	createMonthSectors,
-	shitfuck,
+	build
 };
 
 })();
