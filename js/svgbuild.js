@@ -327,8 +327,15 @@ function createMonthSectors()
 		stroke: "none",
 	});
 
-	const distUpper = 35;
-	const distLower = 55;
+	const labels = createSVGElem("g", {
+		fill: "black",
+		stroke: "black",
+		"stroke-width": strokeWidth / 1,
+		style: "font-size: 20px;",
+	});
+
+	const distUpper = 35+1;
+	const distLower = 55+5;
 	const distMiddle = (distUpper + distLower) / 2;
 
 	const monthSubdivs = 10;
@@ -348,15 +355,16 @@ function createMonthSectors()
 		// labels
 
 		const pathId = `month${i}`;
-		const innerHTML = monthNames[i];
+		const innerHTML = monthNames[i].toUpperCase();
 
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { style: "font-size: 20; stroke: black;" });
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { fill: monthColors[i] });
 
-		group.appendChild(text);
+		labels.appendChild(text);
 
 		group.appendChild(sector);
 	}
 
+	group.appendChild(labels);
 	addElement(group);
 }
 
