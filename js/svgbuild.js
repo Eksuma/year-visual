@@ -175,7 +175,8 @@ function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivi
 {
 	const turnMid = (turnStart + turnEnd) / 2;
 	const isUpsideDown = Ellipse.offsetPoint(turnMid, offset).y > 0;
-	const flipped = !(isUpsideDown ^ isClockwise);
+	// const flipped = !(isUpsideDown ^ isClockwise);
+	const flipped = (isUpsideDown ? 1 : 0) ^ (isClockwise ? 0 : 1);
 
 	const d = 'M' + createCurveData(
 		turnStart,
@@ -198,7 +199,7 @@ function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivi
 		// "dominant-baseline": "middle",
 		// method: "stretch",
 		// spacing: "auto",
-		side: flipped ? "right" : "left",
+		side: (flipped ? "right" : "left"),
 	});
 
 	textPath.setAttributeNS(xlinkNS, "href", '#' + pathId);
@@ -381,8 +382,9 @@ function createQuarterSectors()
 {
 	const group = createSVGElem("g", {
 		id: "quarters",
-		fill: "#ff0",
+		fill: "#f0f",
 		stroke: "none",
+		"shape-rendering": "crispEdges",
 	});
 
 	const labels = createSVGElem("g", {
@@ -406,7 +408,13 @@ function createQuarterSectors()
 
 		const alpha = dayCounter / daysInMonth[monthIndex];
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
+		// const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
+		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, {
+			fill: lerpColors(
+				monthColors[MyMath.mod(monthIndex + 0 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
+				monthColors[MyMath.mod(monthIndex + 1 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
+				((alpha < 0.5) ? alpha + 0.5 : alpha - 0.5)),
+		});
 
 		if (++dayCounter >= daysInMonth[monthIndex])
 		{

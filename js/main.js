@@ -22,13 +22,16 @@ function testSomething()
 	{
 		var f = MyMath.random(-10, 10);
 
-		var scale = MyMath.randomInt(1, 10);
-		var spacer = MyMath.randomInt(1, 10*scale);
+		var scale = MyMath.randomInt(5, 10);
+		var spacer = MyMath.randomInt(5, 10);
 
-		var fn = MyMath.mod(f * scale, 1);
+		var fn = MyMath.mod(f, 1);
 
-		var r1 = MyMath.mod(f * scale, spacer);
-		var r2 = MyMath.mod(fn, spacer);
+		//var r1 = MyMath.mod(f * scale, spacer);
+		//var r2 = MyMath.mod(fn, spacer);
+
+		var r1 = fn * scale;
+		var r2 = MyMath.mod(f * scale, scale);
 
 		if (Math.abs(r1 - r2) > 1.0e-12)
 		{
@@ -38,9 +41,13 @@ function testSomething()
 			console.log("spacer: " + spacer)
 			console.log("r1:     " + r1)
 			console.log("r2:     " + r2)
-			break;
+			return;
 		}
 	}
+
+	console.log("tests passed.");
 }
+
+testSomething();
 
 })();
