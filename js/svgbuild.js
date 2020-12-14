@@ -48,6 +48,19 @@ const startTurn = -1/4 - (currDayOnTop ? yearRatio : 0);
 const isClockwise = true;
 const strokeWidth = 0.75;
 
+const weekGapSize = 4;
+const weekDistUpper = 0;
+const weekDistLower = 24 - weekGapSize;
+
+const dayDistUpper = 24;
+const dayDistLower = 35;
+
+const monthDistUpper = 35;
+const monthDistLower = 60;
+
+const quarterDistUpper = 60;
+const quarterDistLower = 120;
+
 console.log("percent: " + (yearRatio * 100).toFixed(2))
 // console.log("test: " + testDate)
 // console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
@@ -66,7 +79,7 @@ const monthNames = [
 	"april", "may", "june",
 	"july", "august", "september",
 	"october", "november", "december"
-];
+].map(name => name.toUpperCase());
 
 const monthColors = [
 	"#fdfdfd", "#b3e6ff", "#66ccff",
@@ -218,12 +231,9 @@ function createWeekSectors()
 		stroke: "none",
 	});
 
-	const gapSize = 4;
-	const distUpper = 0;
-	const distLower = 24 - gapSize;
-	const distMiddle = (distUpper + distLower) / 2;
-	const radialGap = (gapSize / 2) / Ellipse.getCircumference();
-	const weekSubdivs = 3;
+	const distMiddle = (weekDistUpper + weekDistLower) / 2;
+	const radialGap = (weekGapSize / Ellipse.getCircumference()) / 2;
+	const weekSubdivs = 6;
 
 	for (var i = firstWeekOffset, weekNum = 0; i < daysInYear; i += daysInWeek, weekNum++)
 	{
@@ -233,7 +243,7 @@ function createWeekSectors()
 		const turnMin = (dayNum1 / daysInYear) + radialGap;
 		const turnMax = (dayNum2 / daysInYear) - radialGap;
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, weekSubdivs, {});
+		const sector = createSectorPath(turnMin, turnMax, weekDistUpper, weekDistLower, weekSubdivs, {});
 
 		group.appendChild(sector);
 
@@ -253,14 +263,6 @@ function createWeekSectors()
 		group.appendChild(text);
 	}
 
-	// tmp year dial
-	const upper = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distUpper-5)
-	const lower = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), distLower)
-	const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
-	var polyline = createSVGElem("polyline", { points: data, stroke: "red", "stroke-width": strokeWidth/2 });
-
-	group.appendChild(polyline);
-
 	addElement(group);
 }
 
@@ -273,9 +275,6 @@ function createDaySectors()
 		// "stroke-width": strokeWidth,
 	});
 
-	const distUpper = 24;
-	const distLower = 35;
-
 	var dayCount = 0;
 
 	for (var i = 0; i < monthsInYear; i++)
@@ -286,47 +285,12 @@ function createDaySectors()
 
 		const monthSubdivs = daysInMonth[i] - 1;
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, monthSubdivs, { fill: monthColors[i] });
+		const sector = createSectorPath(turnMin, turnMax, dayDistUpper, dayDistLower, monthSubdivs, { fill: monthColors[i] });
 
 		group.appendChild(sector);
 	}
 
-	// outlines
-
-	var outlineg = createSVGElem("g", {
-		fill: "none",
-		stroke: "black",
-		"stroke-width": strokeWidth,
-	});
-
-	const dhi = createLoopData(distUpper, daysInYear);
-	const dlo = createLoopData(distLower, daysInYear);
-
-	const pathHi = createSVGElem("path", { d: dhi });
-	const pathLo = createSVGElem("path", { d: dlo });
-
-	outlineg.appendChild(pathHi);
-	outlineg.appendChild(pathLo);
-
-	const finalAngle = (daysInYear - 1) / daysInYear;
-
-	const pointsHi = Ellipse.offsetCurveGen(0, finalAngle, distUpper, daysInYear);
-	const pointsLo = Ellipse.offsetCurveGen(0, finalAngle, distLower, daysInYear);
-
-	for (var i = 0; i < daysInYear; i++)
-	{
-		const upper = pointsHi.next().value;
-		const lower = pointsLo.next().value;
-
-		const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
-
-		var polyline = createSVGElem("polyline", { points: data });
-
-		outlineg.appendChild(polyline);
-	}
-
 	addElement(group);
-	addElement(outlineg);
 }
 
 function createMonthSectors()
@@ -344,9 +308,7 @@ function createMonthSectors()
 		style: "font-size: 20px;",
 	});
 
-	const distUpper = 35+1;
-	const distLower = 55+5;
-	const distMiddle = (distUpper + distLower) / 2;
+	const distMiddle = (monthDistUpper + monthDistLower) / 2;
 
 	const monthSubdivs = 10;
 
@@ -360,12 +322,12 @@ function createMonthSectors()
 
 		const monthSubdivs = daysInMonth[i] - 1;
 
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, monthSubdivs, {});
+		const sector = createSectorPath(turnMin, turnMax, monthDistUpper, monthDistLower, monthSubdivs, {});
 
 		// labels
 
 		const pathId = `month${i}`;
-		const innerHTML = monthNames[i].toUpperCase();
+		const innerHTML = monthNames[i];
 
 		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { fill: monthColors[i] });
 
@@ -388,15 +350,13 @@ function createQuarterSectors()
 	});
 
 	const labels = createSVGElem("g", {
-		fill: "black",
+		fill: "white",
 		stroke: "black",
 		"stroke-width": strokeWidth / 2,
 		style: "font-size: 30px;",
 	});
 
-	const distUpper = 61;
-	const distLower = 120;
-	const distMiddle = (distUpper + distLower) / 2;
+	const distMiddle = (quarterDistUpper + quarterDistLower) / 2;
 
 	var monthIndex = 0;
 	var dayCounter = 0;
@@ -408,8 +368,8 @@ function createQuarterSectors()
 
 		const alpha = dayCounter / daysInMonth[monthIndex];
 
-		// const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
-		const sector = createSectorPath(turnMin, turnMax, distUpper, distLower, 0, {
+		// const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
+		const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, {
 			fill: lerpColors(
 				monthColors[MyMath.mod(monthIndex + 0 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
 				monthColors[MyMath.mod(monthIndex + 1 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
@@ -425,7 +385,137 @@ function createQuarterSectors()
 		group.appendChild(sector);
 	}
 
+	//
+	// labels
+	//
+
+	var dayCount = 0;
+
+	for (var i = 0; i < 4; i++)
+	{
+		const daysInQuarter = daysInMonth[i * 3 + 0] + daysInMonth[i * 3 + 1] + daysInMonth[i * 3 + 2];
+
+		const turnMin = dayCount / daysInYear;
+		dayCount += daysInQuarter;
+		const turnMax = dayCount / daysInYear;
+
+		const pathId = `quarter${i}`;
+		const innerHTML = `QUARTER ${i + 1}`;
+		//const innerHTML = `___________________QUARTER ${i + 1}___________________`;
+
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInQuarter, {});
+
+		labels.appendChild(text);
+	}
+
 	group.appendChild(labels);
+	addElement(group);
+}
+
+function createOutlines()
+{
+	var group = createSVGElem("g", {
+		fill: "none",
+		stroke: "black",
+		"stroke-width": strokeWidth,
+	});
+
+	//
+	// days
+	//
+
+	{
+		const dhi = createLoopData(dayDistUpper, daysInYear);
+		const dlo = createLoopData(dayDistLower, daysInYear);
+
+		const pathHi = createSVGElem("path", { d: dhi });
+		const pathLo = createSVGElem("path", { d: dlo });
+
+		group.appendChild(pathHi);
+		group.appendChild(pathLo);
+
+		const finalAngle = (daysInYear - 1) / daysInYear;
+
+		const pointsHi = Ellipse.offsetCurveGen(0, finalAngle, dayDistUpper, daysInYear);
+		const pointsLo = Ellipse.offsetCurveGen(0, finalAngle, dayDistLower, daysInYear);
+
+		for (var i = 0; i < daysInYear; i++)
+		{
+			const upper = pointsHi.next().value;
+			const lower = pointsLo.next().value;
+
+			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+
+			var polyline = createSVGElem("polyline", { points: data });
+
+			group.appendChild(polyline);
+		}
+	}
+
+	//
+	// months
+	//
+
+	{
+		//const dhi = createLoopData(monthDistUpper, daysInYear);
+		const dlo = createLoopData(monthDistLower, daysInYear);
+
+		//const pathHi = createSVGElem("path", { d: dhi });
+		const pathLo = createSVGElem("path", { d: dlo });
+
+		//outlines.appendChild(pathHi);
+		group.appendChild(pathLo);
+
+		const finalAngle = (monthsInYear - 1) / monthsInYear;
+
+		const pointsHi = Ellipse.offsetCurveGen(0, finalAngle, monthDistUpper, monthsInYear);
+		const pointsLo = Ellipse.offsetCurveGen(0, finalAngle, monthDistLower, monthsInYear);
+
+		var dayCount = 0;
+
+		for (var i = 0; i < monthsInYear; i++)
+		{
+			const alpha = dayCount / daysInYear;
+
+			dayCount += daysInMonth[i];
+
+			const upper = Ellipse.offsetPoint(alpha, monthDistUpper);
+			const lower = Ellipse.offsetPoint(alpha, monthDistLower);
+
+			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+
+			var polyline = createSVGElem("polyline", { points: data });
+
+			group.appendChild(polyline);
+		}
+	}
+
+	// quarters
+
+	{
+		const d = createLoopData(quarterDistLower, daysInYear);
+		group.appendChild(createSVGElem("path", { d }));
+
+		var dayCount = 0;
+
+		for (var i = 0; i < 4; i++)
+		{
+			const daysInQuarter = daysInMonth[i * 3 + 0] + daysInMonth[i * 3 + 1] + daysInMonth[i * 3 + 2];
+
+			const alpha = dayCount / daysInYear;
+			dayCount += daysInQuarter;
+
+			const upper = Ellipse.offsetPoint(alpha, quarterDistUpper);
+			const lower = Ellipse.offsetPoint(alpha, quarterDistLower);
+
+			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+
+			var polyline = createSVGElem("polyline", { points: data });
+
+			group.appendChild(polyline);
+		}
+	}
+
 	addElement(group);
 }
 
@@ -463,6 +553,19 @@ function init(width, height)
 	return svgRoot;
 }
 
+function createDateDial()
+{
+	// const upper = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), weekDistUpper-5)
+	// const lower = Ellipse.offsetPoint(MyMath.mod(yearRatio, 1), weekDistLower)
+	const upper = Ellipse.offsetPoint(yearRatio, weekDistUpper-5)
+	const lower = Ellipse.offsetPoint(yearRatio, quarterDistLower+5)
+
+	const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+	var polyline = createSVGElem("polyline", { points: data, stroke: "red", "stroke-width": strokeWidth*3, fill: "black" });
+
+	svgRoot.appendChild(polyline);
+}
+
 function build()
 {
 	makeRects(10);
@@ -470,6 +573,8 @@ function build()
 	createDaySectors();
 	createMonthSectors();
 	createQuarterSectors();
+	createOutlines();
+	createDateDial();
 	shitfuck();
 }
 
