@@ -223,6 +223,48 @@ function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivi
 	return text;
 }
 
+function createThiccLine(p1, p2, width)
+{
+	const halfW = width * 0.5;
+	const point = new Vector2();
+	const normal = new Vector2().substractVectors(p2, p1).normalize().perp();
+
+	var data = "";
+
+	const addP = p => data += round(p.x) + "," + round(p.y) + " ";
+
+	point.copy(p1).addScaledVector(normal, halfW); addP(point);
+	point.copy(p2).addScaledVector(normal, halfW); addP(point);
+	point.copy(p2).addScaledVector(normal, -halfW); addP(point);
+	point.copy(p1).addScaledVector(normal, -halfW); addP(point);
+
+	return 'M' + data + 'z';
+}
+
+function createDashedLine(p1, p2, width)
+{
+	const dash = 20;
+	const length = new Vector2().substractVectors(p2, p1).length();
+
+	const point1 = new Vector2();
+	const point2 = new Vector2();
+
+	var data = "";
+
+	for (var x = 0; x <= length - dash; x += dash * 2)
+	{
+		const alpha1 = (x + 0) / length;
+		const alpha2 = (x + dash) / length;
+
+		point1.lerpVectors(p1, p2, alpha1);
+		point2.lerpVectors(p1, p2, alpha2);
+
+		data += createThiccLine(point1, point2, width) + ' ';
+	}
+
+	return data.trim();
+}
+
 function createWeekSectors()
 {
 	const group = createSVGElem("g", {
@@ -412,6 +454,72 @@ function createQuarterSectors()
 	addElement(group);
 }
 
+function createSeasonSectors()
+{
+	const group = createSVGElem("g", {
+		id: "seasons",
+		fill: "#bbb",
+		//stroke: "transparent",
+		//stroke: "black",
+		//"stroke-width": 5,
+		"fill-rule": "evenodd",
+	});
+
+	const labels = createSVGElem("g", {
+		fill: "white",
+		stroke: "none",
+		"stroke-width": strokeWidth / 2,
+		style: "font-size: 30px;",
+	});
+
+	const seasonsInYear = 4;
+	const seasonNames = ["spring", "summer", "fall", "winter"].map(name => name.toUpperCase());
+
+	const seasonDistUpper = 200;
+	const seasonDistLower = 240;
+	const distMiddle = (seasonDistUpper + seasonDistLower) / 2;
+
+	const du = createLoopData(seasonDistUpper, daysInYear);
+	const dl = createLoopData(seasonDistLower, daysInYear);
+
+	const size = 300-10;
+	//const line1 = createThiccLine({x:-size,y:-size}, {x:size,y:size}, 10);
+	const line1 = createDashedLine({x:-size,y:-size}, {x:size,y: size}, 10);
+	const line2 = createDashedLine({x:-size,y: size}, {x:size,y:-size}, 10);
+
+	const path = createSVGElem("path", { d: du + ' ' + dl + ' ' + line1 + ' ' + line2 });
+	group.appendChild(path);
+
+	// const line1 = createSVGElem("polyline", { points: "-300,-300, 300,300" });
+	//group.appendChild(line1);
+
+	//
+	// labels
+	//
+
+	var dayCount = 0;
+
+	/*for (var i = 0; i < seasonsInYear; i++)
+	{
+		const daysInQuarter = daysInMonth[i * 3 + 0] + daysInMonth[i * 3 + 1] + daysInMonth[i * 3 + 2];
+
+		const turnMin = dayCount / daysInYear;
+		dayCount += daysInQuarter;
+		const turnMax = dayCount / daysInYear;
+
+		const pathId = `season{i}`;
+		const innerHTML = seasonNames[i];
+		//const innerHTML = `___________________QUARTER ${i + 1}___________________`;
+
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInQuarter, {});
+
+		labels.appendChild(text);
+	}
+
+	group.appendChild(labels);*/
+	addElement(group);
+}
+
 function createOutlines()
 {
 	var group = createSVGElem("g", {
@@ -573,6 +681,7 @@ function build()
 	createDaySectors();
 	createMonthSectors();
 	createQuarterSectors();
+	createSeasonSectors();
 	createOutlines();
 	createDateDial();
 	shitfuck();
