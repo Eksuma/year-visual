@@ -670,9 +670,17 @@ function init(width, height)
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
 	// const viewBox = [-scaleX / 8 - 100, -scaleY / 2, scaleX / 4, scaleY / 4].map(x => x.toFixed(2)).join(" ");
 
-	const rect = document.getElementById("svgmain").getBoundingClientRect();
-	const bw = rect.width - 20;
-	const bh = rect.height - 20;
+	const getContentSize = (element) => {
+		const styles = getComputedStyle(element);
+
+		return {
+			width: element.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight),
+			height: element.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom)
+		};
+	}
+
+	// hack: siirrä funktion ulkopuolelle
+	const { width: bw, height: bh } = getContentSize(document.getElementById("svgmain"));
 
 	// svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
 	svgRoot = createSVGElem("svg", { id: "yearRound", width: bw, height: bh, viewBox });
