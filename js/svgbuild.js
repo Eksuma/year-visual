@@ -399,12 +399,14 @@ function createQuarterSectors()
 	});
 
 	const distMiddle = (quarterDistUpper + quarterDistLower) / 2;
+	const subSectors = 3;
 
 	var monthIndex = 0;
 	var dayCounter = 0;
 
 	for (var i = 0; i < daysInYear; i++)
 	{
+/*
 		const turnMin = (i + 0) / daysInYear;
 		const turnMax = (i + 1) / daysInYear;
 
@@ -417,6 +419,25 @@ function createQuarterSectors()
 				monthColors[MyMath.mod(monthIndex + 1 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
 				((alpha < 0.5) ? alpha + 0.5 : alpha - 0.5)),
 		});
+*/
+
+		for (var j = 0; j < subSectors; j++)
+		{
+			const turnMin = (i + (j + 0) / subSectors) / daysInYear;
+			const turnMax = (i + (j + 1) / subSectors) / daysInYear;
+
+			const alpha = (dayCounter + j / subSectors) / daysInMonth[monthIndex];
+
+			// const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
+			const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, {
+				fill: lerpColors(
+					monthColors[MyMath.mod(monthIndex + 0 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
+					monthColors[MyMath.mod(monthIndex + 1 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
+					((alpha < 0.5) ? alpha + 0.5 : alpha - 0.5)),
+			});
+
+			group.appendChild(sector);
+		}
 
 		if (++dayCounter >= daysInMonth[monthIndex])
 		{
@@ -424,7 +445,7 @@ function createQuarterSectors()
 			dayCounter = 0;
 		}
 
-		group.appendChild(sector);
+		//group.appendChild(sector);
 	}
 
 	//
@@ -649,7 +670,12 @@ function init(width, height)
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
 	// const viewBox = [-scaleX / 8 - 100, -scaleY / 2, scaleX / 4, scaleY / 4].map(x => x.toFixed(2)).join(" ");
 
-	svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
+	const rect = document.getElementById("svgmain").getBoundingClientRect();
+	const bw = rect.width - 20;
+	const bh = rect.height - 20;
+
+	// svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
+	svgRoot = createSVGElem("svg", { id: "yearRound", width: bw, height: bh, viewBox });
 	svgDefs = createSVGElem("defs", {});
 
 	svgRoot.appendChild(svgDefs);
