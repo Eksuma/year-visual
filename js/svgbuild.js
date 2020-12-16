@@ -8,8 +8,8 @@ const SVG = (function() {
 const namespace = "http://www.w3.org/2000/svg";
 const xlinkNS = "http://www.w3.org/1999/xlink";
 
+// näitä viittä ei tarvita globaalisti...
 let aspect;
-
 let scaleX;
 let scaleY;
 let radiusX;
@@ -61,6 +61,9 @@ const monthDistLower = 60;
 const quarterDistUpper = 60;
 const quarterDistLower = 120;
 
+const seasonDistUpper = 180;
+const seasonDistLower = 230;
+
 console.log("percent: " + (yearRatio * 100).toFixed(2))
 // console.log("test: " + testDate)
 // console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
@@ -87,6 +90,8 @@ const monthColors = [
 	"#ffbf00", "#e1942b", "#906611", // 8: #c38e22
 	"#ff8000", "#4d6680", "#c83333", // 10: #ff9933   11: #a18aa8   12: #ff3333
 ];
+
+const seasonNames = ["spring", "summer", "autumn", "winter"].map(name => name.toUpperCase());
 
 //
 // Functions
@@ -184,17 +189,17 @@ function createSectorPath(turn1, turn2, offset1, offset2, subdivisions, attribut
 	return createSVGElem("path", { d: 'M' + d1 + ' ' + d2 + 'z', ...attributes });
 }
 
-function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivisions, attributes)
+function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivisions, attributes, h4xshift = 0)
 {
 	const turnMid = (turnStart + turnEnd) / 2;
 	const isUpsideDown = Ellipse.offsetPoint(turnMid, offset).y > 0;
-	// const flipped = !(isUpsideDown ^ isClockwise);
-	const flipped = (isUpsideDown ? 1 : 0) ^ (isClockwise ? 0 : 1);
+	const flipped = !(isUpsideDown ^ isClockwise);
+	// const flipped = (isUpsideDown ? 1 : 0) ^ (isClockwise ? 0 : 1);
 
 	const d = 'M' + createCurveData(
 		turnStart,
 		turnEnd,
-		offset + (isUpsideDown ? -1 : 1),
+		offset + (isUpsideDown ? -1 : 1) * h4xshift,
 		subdivisions,
 	);
 
@@ -241,9 +246,8 @@ function createThiccLine(p1, p2, width)
 	return 'M' + data + 'z';
 }
 
-function createDashedLine(p1, p2, width)
+function createDashedLine(p1, p2, width, dash)
 {
-	const dash = 20;
 	const length = new Vector2().substractVectors(p2, p1).length();
 
 	const point1 = new Vector2();
@@ -300,7 +304,7 @@ function createWeekSectors()
 		const pathId = `week${weekNum}`;
 		const innerHTML = `WEEK <tspan dy="-1">${weekNum + 1}</tspan>`; // TODO: Miksi täytyy olla hack
 
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" });
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" }, 1.0);
 
 		group.appendChild(text);
 	}
@@ -347,7 +351,6 @@ function createMonthSectors()
 		fill: "black",
 		stroke: "black",
 		"stroke-width": strokeWidth / 2,
-		style: "font-size: 20px;",
 	});
 
 	const distMiddle = (monthDistUpper + monthDistLower) / 2;
@@ -371,7 +374,7 @@ function createMonthSectors()
 		const pathId = `month${i}`;
 		const innerHTML = monthNames[i];
 
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { fill: monthColors[i] });
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, monthSubdivs, { fill: monthColors[i], class: "months" }, 1.5);
 
 		labels.appendChild(text);
 
@@ -395,7 +398,6 @@ function createQuarterSectors()
 		fill: "white",
 		stroke: "black",
 		"stroke-width": strokeWidth / 2,
-		style: "font-size: 30px;",
 	});
 
 	const distMiddle = (quarterDistUpper + quarterDistLower) / 2;
@@ -464,9 +466,9 @@ function createQuarterSectors()
 
 		const pathId = `quarter${i}`;
 		const innerHTML = `QUARTER ${i + 1}`;
-		//const innerHTML = `___________________QUARTER ${i + 1}___________________`;
+		//const innerHTML = `<===+===|===+===QUARTER ${i + 1}===+===|===+===>`;
 
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInQuarter, {});
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInQuarter, { class: "quarters" }, 1.5);
 
 		labels.appendChild(text);
 	}
@@ -490,23 +492,23 @@ function createSeasonSectors()
 		fill: "white",
 		stroke: "none",
 		"stroke-width": strokeWidth / 2,
-		style: "font-size: 30px;",
 	});
 
-	const seasonsInYear = 4;
-	const seasonNames = ["spring", "summer", "fall", "winter"].map(name => name.toUpperCase());
-
-	const seasonDistUpper = 200;
-	const seasonDistLower = 240;
+	const seasonsInYear = seasonNames.length;
 	const distMiddle = (seasonDistUpper + seasonDistLower) / 2;
 
 	const du = createLoopData(seasonDistUpper, daysInYear);
 	const dl = createLoopData(seasonDistLower, daysInYear);
 
+	const corner = Ellipse.offsetPoint(1/8, quarterDistLower + 5);
+
+	corner.x -= 10;
+	corner.y += 10;
+
 	const size = 300-10;
 	//const line1 = createThiccLine({x:-size,y:-size}, {x:size,y:size}, 10);
-	const line1 = createDashedLine({x:-size,y:-size}, {x:size,y: size}, 10);
-	const line2 = createDashedLine({x:-size,y: size}, {x:size,y:-size}, 10);
+	const line1 = createDashedLine({x:-corner.x,y:-corner.y}, {x:corner.x,y: corner.y}, 5, 10);
+	const line2 = createDashedLine({x:-corner.x,y: corner.y}, {x:corner.x,y:-corner.y}, 5, 10);
 
 	const path = createSVGElem("path", { d: du + ' ' + dl + ' ' + line1 + ' ' + line2 });
 	group.appendChild(path);
@@ -518,26 +520,22 @@ function createSeasonSectors()
 	// labels
 	//
 
-	var dayCount = 0;
+	const turnStart = 1/8;
 
-	/*for (var i = 0; i < seasonsInYear; i++)
+	for (var i = 0; i < seasonsInYear; i++)
 	{
-		const daysInQuarter = daysInMonth[i * 3 + 0] + daysInMonth[i * 3 + 1] + daysInMonth[i * 3 + 2];
+		const turnMin = turnStart + (i + 0) / seasonsInYear;
+		const turnMax = turnStart + (i + 1) / seasonsInYear;
 
-		const turnMin = dayCount / daysInYear;
-		dayCount += daysInQuarter;
-		const turnMax = dayCount / daysInYear;
-
-		const pathId = `season{i}`;
+		const pathId = `season${i}`;
 		const innerHTML = seasonNames[i];
-		//const innerHTML = `___________________QUARTER ${i + 1}___________________`;
 
-		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInQuarter, {});
+		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, daysInYear / 4, { class: "seasons" }, 1.25);
 
 		labels.appendChild(text);
 	}
 
-	group.appendChild(labels);*/
+	group.appendChild(labels);
 	addElement(group);
 }
 
@@ -668,22 +666,8 @@ function init(width, height)
 	radiusY = scaleY / 2;
 
 	const viewBox = [-scaleX / 2, -scaleY / 2, scaleX, scaleY].map(x => x.toFixed(2)).join(" ");
-	// const viewBox = [-scaleX / 8 - 100, -scaleY / 2, scaleX / 4, scaleY / 4].map(x => x.toFixed(2)).join(" ");
 
-	const getContentSize = (element) => {
-		const styles = getComputedStyle(element);
-
-		return {
-			width: element.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight),
-			height: element.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom)
-		};
-	}
-
-	// hack: siirrä funktion ulkopuolelle
-	const { width: bw, height: bh } = getContentSize(document.getElementById("svgmain"));
-
-	// svgRoot = createSVGElem("svg", { id: "yearRound", width: "100%", height: "100%", viewBox });
-	svgRoot = createSVGElem("svg", { id: "yearRound", width: bw, height: bh, viewBox });
+	svgRoot = createSVGElem("svg", { id: "yearRound", width, height, viewBox });
 	svgDefs = createSVGElem("defs", {});
 
 	svgRoot.appendChild(svgDefs);

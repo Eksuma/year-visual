@@ -20,7 +20,7 @@ div#conic {
 	font-family: 'Open Sans', DINPro, sans-serif;
 	/* text-anchor: middle; */
 	/* dominant-baseline: middle; // alignment-baseline: middle; */
-	/* line-height: 0.5; */
+	/* line-height: 1.0; */
 }
 
 #yearRound textPath {
@@ -44,4 +44,18 @@ div#conic {
 tspan {
 	font-weight: bold;
 	/* fill: red; */
+}
+
+.months {
+	font-size: 20px;
+}
+
+.quarters {
+	font-size: 30px;
+	font-weight: bold;
+}
+
+.seasons {
+	font-size: 25px;
+	font-weight: 500;
 }
