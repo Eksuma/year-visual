@@ -28,13 +28,15 @@ const monthsInYear = 12;
 const daysInMonth = [31, 28 + leapDay, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const daysInYear = 365 + leapDay;
 
-const testDate = new Date(currYear, 11, 31, 23, 59, 59, 0);
-
 const yearStart = new Date(currYear, 0);
 const yearEnd = new Date(currYear + 1, 0);
-const yearRatio = (currDate.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
-// const yearRatio = (testDate - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
 const firstDayOfYear = yearStart.getDay();
+
+const getDatePosition = date => (date.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+
+const yearRatio = getDatePosition(currDate);
+
+const testDate = new Date(currYear, 11, 31, 23, 59, 59, 0);
 
 //
 // "Settings"
@@ -63,10 +65,6 @@ const quarterDistLower = 120;
 
 const seasonDistUpper = 180;
 const seasonDistLower = 230;
-
-console.log("percent: " + (yearRatio * 100).toFixed(2))
-// console.log("test: " + testDate)
-// console.log("millis: " + (yearEnd.getTime() - testDate.getTime()))
 
 /*
 const monthNames = [
@@ -481,7 +479,7 @@ function createSeasonSectors()
 {
 	const group = createSVGElem("g", {
 		id: "seasons",
-		fill: "#bbb",
+		fill: "#aaa",
 		//stroke: "transparent",
 		//stroke: "black",
 		//"stroke-width": 5,

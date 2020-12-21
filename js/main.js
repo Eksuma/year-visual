@@ -7,7 +7,8 @@ const contentBox = getContentSize(svgContainer);
 
 const goldenRatio = 5. ** .5 * .5 + .5;
 
-const width = Math.min(contentBox.height * goldenRatio * 0.75, contentBox.width);
+const maxScaleDiff = 1.5;
+const width = Math.min(contentBox.height * maxScaleDiff, contentBox.width);
 const height = contentBox.height;
 
 const svgRoot = SVG.init(width, height);
