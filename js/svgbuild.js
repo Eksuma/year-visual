@@ -8,7 +8,6 @@ const SVG = (function() {
 const namespace = "http://www.w3.org/2000/svg";
 const xlinkNS = "http://www.w3.org/1999/xlink";
 
-// näitä viittä ei tarvita globaalisti...
 let aspect;
 let scaleX;
 let scaleY;
@@ -20,7 +19,9 @@ let svgDefs;
 
 const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 
+// const testDate = new Date(2020, 0, 7, 23, 59, 59, 0);
 const currDate = new Date();
+// const currDate = testDate;
 const currYear = currDate.getFullYear();
 const leapDay = isLeapYear(currYear) ? 1 : 0;
 const daysInWeek = 7;
@@ -35,8 +36,6 @@ const firstDayOfYear = yearStart.getDay();
 const getDatePosition = date => (date.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
 
 const yearRatio = getDatePosition(currDate);
-
-const testDate = new Date(currYear, 11, 31, 23, 59, 59, 0);
 
 //
 // "Settings"
@@ -295,12 +294,14 @@ function createWeekSectors()
 		// labels
 		//
 
-		// if there's no room for the text, just skip it
-		if (dayNum2 - dayNum1 < 5)
+		const hasRoom = (dayNum2 - dayNum1) > 4;
+
+		if (!hasRoom)
 			continue;
 
 		const pathId = `week${weekNum}`;
 		const innerHTML = `WEEK <tspan dy="-1">${weekNum + 1}</tspan>`; // TODO: Miksi täytyy olla hack
+		// const innerHTML = `${(hasRoom ? "WEEK" : "")} <tspan dy="-1">${weekNum + 1}</tspan>`;
 
 		const text = createCurvedText(innerHTML, pathId, turnMin, turnMax, distMiddle, weekSubdivs, { class: "tyyli1" }, 1.0);
 
@@ -498,21 +499,39 @@ function createSeasonSectors()
 	const du = createLoopData(seasonDistUpper, daysInYear);
 	const dl = createLoopData(seasonDistLower, daysInYear);
 
-	const corner = Ellipse.offsetPoint(1/8, quarterDistLower + 5);
+	//
 
-	corner.x -= 10;
-	corner.y += 10;
+	const dash = 15;
+	const lineW = 3.5;
 
-	const size = 300-10;
-	//const line1 = createThiccLine({x:-size,y:-size}, {x:size,y:size}, 10);
-	const line1 = createDashedLine({x:-corner.x,y:-corner.y}, {x:corner.x,y: corner.y}, 5, 10);
-	const line2 = createDashedLine({x:-corner.x,y: corner.y}, {x:corner.x,y:-corner.y}, 5, 10);
+	const linePoint1 = new Vector2().copy(Ellipse.offsetPoint(1/8, quarterDistLower + 5));
+	const linePoint2 = new Vector2().copy(Ellipse.offsetPoint(3/8, quarterDistLower + 5));
+	const lineLength1 = linePoint1.length();
+	const lineLength2 = linePoint2.length();
 
-	const path = createSVGElem("path", { d: du + ' ' + dl + ' ' + line1 + ' ' + line2 });
+	const dir1 = linePoint1.clone().normalize();
+	const dir2 = linePoint2.clone().normalize();
+
+	const p1 = dir1.clone().multiply(1.5 * dash);
+	const p2 = dir1.clone().multiply(Math.floor(lineLength1 / dash) * dash);
+	const p3 = dir2.clone().multiply(1.5 * dash);
+	const p4 = dir2.clone().multiply(Math.floor(lineLength2 / dash) * dash);
+
+	const line1 = createDashedLine({x:-p1.x,y:-p1.y}, {x:-p2.x,y:-p2.y}, lineW, dash);
+	const line2 = createDashedLine({x: p1.x,y: p1.y}, {x: p2.x,y: p2.y}, lineW, dash);
+	const line3 = createDashedLine({x:-p3.x,y:-p3.y}, {x:-p4.x,y:-p4.y}, lineW, dash);
+	const line4 = createDashedLine({x: p3.x,y: p3.y}, {x: p4.x,y: p4.y}, lineW, dash);
+
+	const path = createSVGElem("path", { d: du + ' ' + dl + ' ' + line1 + ' ' + line2 + ' ' + line3 + ' ' + line4 });
 	group.appendChild(path);
 
-	// const line1 = createSVGElem("polyline", { points: "-300,-300, 300,300" });
-	//group.appendChild(line1);
+	const p5 = dir1.clone().multiply(0.5 * dash);
+	const p6 = dir2.clone().multiply(0.5 * dash);
+
+	const cd1 = createThiccLine({x: p5.x,y: p5.y}, {x:-p5.x,y:-p5.y}, lineW);
+	const cd2 = createThiccLine({x: p6.x,y: p6.y}, {x:-p6.x,y:-p6.y}, lineW);
+	const center = createSVGElem("path", { d: cd1 + ' ' + cd2, "fill-rule": "nonzero" });
+	group.appendChild(center);
 
 	//
 	// labels
@@ -642,6 +661,11 @@ function createOutlines()
 	}
 
 	addElement(group);
+}
+
+function createCelestialPhases()
+{
+
 }
 
 function shitfuck()
