@@ -19,9 +19,9 @@ let svgDefs;
 
 const isLeapYear = year => ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 
-// const testDate = new Date(2020, 0, 7, 23, 59, 59, 0);
+const testDate = new Date(2020, 1, 28, 23, 59, 59, 0);
 const currDate = new Date();
-// const currDate = testDate;
+//const currDate = testDate;
 const currYear = currDate.getFullYear();
 const leapDay = isLeapYear(currYear) ? 1 : 0;
 const daysInWeek = 7;
@@ -116,7 +116,7 @@ function createAndAddSVGElem(tag, attributes)
 
 function round(num)
 {
-	return num.toFixed(3);
+	return num.toFixed(2);
 }
 
 function createStyling()
@@ -225,7 +225,7 @@ function createCurvedText(innerHTML, pathId, turnStart, turnEnd, offset, subdivi
 	return text;
 }
 
-function createThiccLine(p1, p2, width)
+function createThiccLineData(p1, p2, width)
 {
 	const halfW = width * 0.5;
 	const point = new Vector2();
@@ -243,7 +243,7 @@ function createThiccLine(p1, p2, width)
 	return 'M' + data + 'z';
 }
 
-function createDashedLine(p1, p2, width, dash)
+function createDashedLineData(p1, p2, width, dash)
 {
 	const length = new Vector2().substractVectors(p2, p1).length();
 
@@ -260,7 +260,7 @@ function createDashedLine(p1, p2, width, dash)
 		point1.lerpVectors(p1, p2, alpha1);
 		point2.lerpVectors(p1, p2, alpha2);
 
-		data += createThiccLine(point1, point2, width) + ' ';
+		data += createThiccLineData(point1, point2, width) + ' ';
 	}
 
 	return data.trim();
@@ -407,21 +407,6 @@ function createQuarterSectors()
 
 	for (var i = 0; i < daysInYear; i++)
 	{
-/*
-		const turnMin = (i + 0) / daysInYear;
-		const turnMax = (i + 1) / daysInYear;
-
-		const alpha = dayCounter / daysInMonth[monthIndex];
-
-		// const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, { fill: lerpColors(monthColors[monthIndex], monthColors[(monthIndex + 1) % monthsInYear], alpha) });
-		const sector = createSectorPath(turnMin, turnMax, quarterDistUpper, quarterDistLower, 0, {
-			fill: lerpColors(
-				monthColors[MyMath.mod(monthIndex + 0 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
-				monthColors[MyMath.mod(monthIndex + 1 - ((alpha < 0.5) ? 1 : 0), monthsInYear)],
-				((alpha < 0.5) ? alpha + 0.5 : alpha - 0.5)),
-		});
-*/
-
 		for (var j = 0; j < subSectors; j++)
 		{
 			const turnMin = (i + (j + 0) / subSectors) / daysInYear;
@@ -517,19 +502,19 @@ function createSeasonSectors()
 	const p3 = dir2.clone().multiply(1.5 * dash);
 	const p4 = dir2.clone().multiply(Math.floor(lineLength2 / dash) * dash);
 
-	const line1 = createDashedLine({x:-p1.x,y:-p1.y}, {x:-p2.x,y:-p2.y}, lineW, dash);
-	const line2 = createDashedLine({x: p1.x,y: p1.y}, {x: p2.x,y: p2.y}, lineW, dash);
-	const line3 = createDashedLine({x:-p3.x,y:-p3.y}, {x:-p4.x,y:-p4.y}, lineW, dash);
-	const line4 = createDashedLine({x: p3.x,y: p3.y}, {x: p4.x,y: p4.y}, lineW, dash);
+	const line1 = createDashedLineData({x:-p1.x,y:-p1.y}, {x:-p2.x,y:-p2.y}, lineW, dash);
+	const line2 = createDashedLineData({x: p1.x,y: p1.y}, {x: p2.x,y: p2.y}, lineW, dash);
+	const line3 = createDashedLineData({x:-p3.x,y:-p3.y}, {x:-p4.x,y:-p4.y}, lineW, dash);
+	const line4 = createDashedLineData({x: p3.x,y: p3.y}, {x: p4.x,y: p4.y}, lineW, dash);
 
-	const path = createSVGElem("path", { d: du + ' ' + dl + ' ' + line1 + ' ' + line2 + ' ' + line3 + ' ' + line4 });
+	const path = createSVGElem("path", { d: [du, dl, line1, line2, line3, line4].join(" ") });
 	group.appendChild(path);
 
 	const p5 = dir1.clone().multiply(0.5 * dash);
 	const p6 = dir2.clone().multiply(0.5 * dash);
 
-	const cd1 = createThiccLine({x: p5.x,y: p5.y}, {x:-p5.x,y:-p5.y}, lineW);
-	const cd2 = createThiccLine({x: p6.x,y: p6.y}, {x:-p6.x,y:-p6.y}, lineW);
+	const cd1 = createThiccLineData({x: p5.x,y: p5.y}, {x:-p5.x,y:-p5.y}, lineW);
+	const cd2 = createThiccLineData({x: p6.x,y: p6.y}, {x:-p6.x,y:-p6.y}, lineW);
 	const center = createSVGElem("path", { d: cd1 + ' ' + cd2, "fill-rule": "nonzero" });
 	group.appendChild(center);
 
@@ -564,6 +549,8 @@ function createOutlines()
 		"stroke-width": strokeWidth,
 	});
 
+	const formatLine = (p1, p2) => round(p1.x) + "," + round(p1.y) + " " + round(p2.x) + "," + round(p2.y);
+
 	//
 	// days
 	//
@@ -588,7 +575,7 @@ function createOutlines()
 			const upper = pointsHi.next().value;
 			const lower = pointsLo.next().value;
 
-			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+			const data = formatLine(upper, lower);
 
 			var polyline = createSVGElem("polyline", { points: data });
 
@@ -626,7 +613,7 @@ function createOutlines()
 			const upper = Ellipse.offsetPoint(alpha, monthDistUpper);
 			const lower = Ellipse.offsetPoint(alpha, monthDistLower);
 
-			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+			const data = formatLine(upper, lower);
 
 			var polyline = createSVGElem("polyline", { points: data });
 
@@ -652,7 +639,7 @@ function createOutlines()
 			const upper = Ellipse.offsetPoint(alpha, quarterDistUpper);
 			const lower = Ellipse.offsetPoint(alpha, quarterDistLower);
 
-			const data = round(upper.x) + "," + round(upper.y) + " " + round(lower.x) + "," + round(lower.y);
+			const data = formatLine(upper, lower);
 
 			var polyline = createSVGElem("polyline", { points: data });
 
