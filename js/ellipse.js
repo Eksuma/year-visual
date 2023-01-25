@@ -85,9 +85,9 @@ function computeDp(turn, rx, ry)
 
 function pointByRatio(circRatio)
 {
-	circRatio = MyMath.mod(circRatio * winding + startTurn, 1);
+	const fudgedRatio = MyMath.mod(circRatio * winding + startTurn, 1);
 
-	const indexReal = MyMath.mod(circRatio * lutPoints, lutPoints);
+	const indexReal = MyMath.mod(fudgedRatio * lutPoints, lutPoints);
 	const indexFloor = Math.floor(indexReal);
 	const indexCeil = MyMath.mod(indexFloor + 1, lutPoints);
 

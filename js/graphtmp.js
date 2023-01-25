@@ -11,15 +11,23 @@ function drawGraph()
 	canvas.height = ch;
 	var ctx = canvas.getContext("2d");
 
-	var grapher = new Grapher(6, 1000, "polar angle", "ellipse sin");
+	var grapher = new Grapher(6, 1000, "polar angle", "ellipse cos");
 
 	const measure = (x, y) => { var rads = Math.atan2(y, x); /*if (rads < 0) rads = MyMath.TAU + rads;*/ return MyMath.mod(MyMath.radToDeg(rads), 360); };
 
+	const dimensions = [
+		{ x: 1, y: 4 / 1  },
+		{ x: 1, y: 2 / 1  },
+		{ x: 1, y: 1 / 1  },
+		{ x: 1, y: 1 / 2  },
+		{ x: 1, y: 1 / 40 }
+	];
+
 	// [{x:1,y:1}, {x:1456,y:600}, {x:2.5,y:1} /*, {x:1,y:1/32}*/].forEach((size, plot) => {
 	//[{x:1.15,y:1}, {x:3,y:1}, {x:4,y:1}, {x:5,y:1}].forEach((size, plot) => {
-	[{x:1,y:4}, {x:1,y:2}, {x:1,y:1.00}, {x:1,y:0.5}, {x:1,y:0.0025}].forEach((size, plot) => {
+	dimensions.forEach((size, plotNum) => {
 
-		Ellipse.computeLUT(size.x, size.y);
+		Ellipse.computeLUT(size.x, size.y, 0.0, true);
 
 		for (var i = 0; i < 1000; i++)
 		{
@@ -28,13 +36,17 @@ function drawGraph()
 
 			const p = Ellipse.pointByRatio(turn);
 
-//if (plot === 2)
-			//grapher.insert(plot, { x: i, y: measure(p.x, p.y)-(i/1000)*360 });
-			grapher.insert(plot, { x: i, y: measure(p.x, p.y) });
-			//grapher.insert(plot, { x: rads, y: p.y });
+//if (plotNum === 2)
+			//grapher.insert(plotNum, { x: i, y: measure(p.x, p.y)-(i/1000)*360 });
+			// grapher.insert(plotNum, { x: i, y: measure(p.x, p.y) });
+			grapher.insert(plotNum, { x: i, y: p.x });
+			//grapher.insert(plotNum, { x: rads, y: p.y });
 		}
 	});
 
+
+
+	/*
 	for (var i = 0; i < 1000; i++)
 	{
 		const turn = i / 1000;
@@ -45,15 +57,14 @@ function drawGraph()
 
 		const pt = powTry(turn, 1, .2);
 
-/*
-		var ellipAngle = Math.atan((2/1) * Math.tan(angle));
 
-		if (angle > MyMath.TAU*(1/4) && angle <= MyMath.TAU*(2/4))
-			ellipAngle += Math.PI;
-
-		if (angle > MyMath.TAU*(2/4) && angle <= MyMath.TAU*(3/4))
-			ellipAngle -= Math.PI;
-*/
+		// var ellipAngle = Math.atan((2/1) * Math.tan(angle));
+		//
+		// if (angle > MyMath.TAU*(1/4) && angle <= MyMath.TAU*(2/4))
+		// 	ellipAngle += Math.PI;
+		//
+		// if (angle > MyMath.TAU*(2/4) && angle <= MyMath.TAU*(3/4))
+		// 	ellipAngle -= Math.PI;
 
 		var ellipAngle = circleToEllipse(i/1000, 1456*0.686813186813186, 600);
 
@@ -64,10 +75,56 @@ function drawGraph()
 		//grapher.insert(3, { x: i/4, y: Math.pow(i/999, 7)*90 });
 		grapher.insert(5, { x: i, y: pt*360 });
 	}
+	*/
 
-	document.body.appendChild(canvas);
+	// document.body.appendChild(canvas);
+	document.querySelector("#svgmain").appendChild(canvas);
 
 	grapher.draw(ctx, 0, 0, cw, ch, true, true);
+}
+
+function graphPerimeters()
+{
+	const cw = 1000;
+	const ch = 900;
+
+	var canvas = document.createElement('canvas');
+	canvas.width = cw;
+	canvas.height = ch;
+	var ctx = canvas.getContext("2d");
+
+	var grapher = new Grapher(1, 1000, "ellipse height", "perimeter");
+
+	for (var i = 0; i < 1000; i++)
+	{
+		const sizex = 1.0;
+		// const sizey = MyMath.xerp(0.1, 1.0, 10.0, 0.5, i / 999);
+		const sizey = MyMath.lerpRange(1.0, 100.0, 0, 999, i);
+
+		Ellipse.computeLUT(sizex, sizey, 0.0, true);
+
+		grapher.insert(0, { x: i, y: Ellipse.getCircumference() });
+
+		if (i % 10 == 0)
+			console.log("Progress: " + (i / 10));
+	}
+
+	document.querySelector("#svgmain").appendChild(canvas);
+
+	grapher.draw(ctx, 0, 0, cw, ch, true, true);
+}
+
+function printPerimeters()
+{
+	for (let i = 0; i < 8; i++)
+	{
+		const sizex = 1.0;
+		const sizey = Math.pow(2, i);
+
+		Ellipse.computeLUT(sizex, sizey, 0.0, true);
+
+		console.log("Circumference (" + sizex + ", " + sizey + "): " + Ellipse.getCircumference());
+	}
 }
 
 function powTry(turn, rx, ry)
@@ -115,8 +172,9 @@ function circleToEllipse(turn, rx, ry)
 	return ellipseRadians;
 }
 
-drawGraph();
-
+//drawGraph();
+//graphPerimeters();
+printPerimeters()
 
 
 /*

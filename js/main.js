@@ -59,6 +59,6 @@ function testSomething()
 	console.log("tests passed.");
 }
 
-testSomething();
+// testSomething();
 
 })();
